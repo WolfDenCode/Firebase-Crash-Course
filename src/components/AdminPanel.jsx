@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { FaTrash, FaEdit, FaPlus, FaTimes } from "react-icons/fa";
 import { GiArrowCluster, GiCatapult, GiAncientSword } from "react-icons/gi";
-import { db } from "../config/firebase";
-import { collection, doc, getDoc, setDoc } from "firebase/firestore";
+import { db, storage } from "../config/firebase";
+import { collection, doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
+import { ref, getDownloadURL, uploadBytes } from "firebase/storage";
 import "./AdminPanel.css";
 import Geralt from "../assets/images/cards/Geralt_of_Rivia.jpg";
 
@@ -43,18 +44,9 @@ const AdminPanel = () => {
   };
 
   const handleAddCard = async () => {
-    const id = Date.now();
-    const card = { ...newCard, id };
-    setCards([...cards, card]);
-    setNewCard({
-      id: null,
-      title: "",
-      power: "",
-      type: "melee",
-      imageFile: null,
-      imageName: "",
-    });
-    console.log("Card Created:", card);
+    // const id = Date.now();
+    // const card = { ...newCard, id };
+    // setCards([...cards, card]);
 
     //First Step Solution, id = null
 
@@ -80,17 +72,46 @@ const AdminPanel = () => {
     // Delete it, because Firebase can't handle this type for a document
     delete newCardWithId.imageFile;
     try {
+      // Upload the image file to Firebase Storage (if a file is selected)
+      let imageUrl = "";
+      if (newCard.imageFile) {
+        const imageRef = ref(
+          storage,
+          `cards/${newCardWithId.id}/${newCard.imageName}`
+        );
+        await uploadBytes(imageRef, newCard.imageFile);
+        imageUrl = await getDownloadURL(imageRef);
+      }
+      newCardWithId.image = imageUrl;
       // Use setDoc with the generated document reference
       await setDoc(docRef, newCardWithId);
+      setCards([...cards, newCardWithId]);
+      setNewCard({
+        id: null,
+        title: "",
+        power: "",
+        type: "melee",
+        imageFile: null,
+        imageName: "",
+      });
+      console.log("Card Created:", newCardWithId);
     } catch (error) {
       console.error("Error adding card to Firestore:", error);
     }
   };
 
-  const handleDeleteCard = (id) => {
-    const updatedCards = cards.filter((card) => card.id !== id);
-    setCards(updatedCards);
-    console.log("Card Deleted:", id);
+  const handleDeleteCard = async (id) => {
+    try {
+      // Delete from Firestore
+      await deleteDoc(doc(CARDS_COLLECTION, id));
+      console.log("Card Deleted from Firestore:", id);
+
+      // Update local state
+      const updatedCards = cards.filter((card) => card.id !== id);
+      setCards(updatedCards);
+    } catch (error) {
+      console.error("Error deleting card from Firestore:", error);
+    }
   };
 
   const handleEditCard = (card) => {
@@ -98,21 +119,35 @@ const AdminPanel = () => {
     setNewCard({ ...card, imageFile: null }); // Clear imageFile for editing mode
   };
 
-  const handleSaveEdit = () => {
-    const updatedCards = cards.map((card) =>
-      card.id === newCard.id ? newCard : card
-    );
-    setCards(updatedCards);
-    setIsEditing(false);
-    setNewCard({
-      id: null,
-      title: "",
-      power: "",
-      type: "melee",
-      imageFile: null,
-      imageName: "",
-    });
-    console.log("Card Updated:", newCard);
+  const handleSaveEdit = async () => {
+    // Create a new object without `imageFile` to avoid uploading a file object to Firestore
+    const { imageFile, ...cardDataToUpload } = newCard;
+
+    try {
+      // Update Firestore
+      const cardDocRef = doc(CARDS_COLLECTION, newCard.id);
+      await setDoc(cardDocRef, cardDataToUpload, { merge: true });
+      console.log("Card Updated in Firestore:", newCard);
+
+      // Update local state
+      const updatedCards = cards.map((card) =>
+        card.id === newCard.id ? newCard : card
+      );
+      setCards(updatedCards);
+
+      // Reset editing state
+      setIsEditing(false);
+      setNewCard({
+        id: null,
+        title: "",
+        power: "",
+        type: "melee",
+        imageFile: null,
+        imageName: "",
+      });
+    } catch (error) {
+      console.error("Error updating card in Firestore:", error);
+    }
   };
 
   const handleCancelEdit = () => {
