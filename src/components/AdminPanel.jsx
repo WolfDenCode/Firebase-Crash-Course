@@ -1,10 +1,14 @@
 import React, { useState } from "react";
 import { FaTrash, FaEdit, FaPlus, FaTimes } from "react-icons/fa";
 import { GiArrowCluster, GiCatapult, GiAncientSword } from "react-icons/gi";
+import { db } from "../config/firebase";
+import { collection, doc, getDoc, setDoc } from "firebase/firestore";
 import "./AdminPanel.css";
 import Geralt from "../assets/images/cards/Geralt_of_Rivia.jpg";
 
 const AdminPanel = () => {
+  const CARDS_COLLECTION = collection(db, "cards");
+
   const [cards, setCards] = useState([
     {
       id: 1,
@@ -12,6 +16,7 @@ const AdminPanel = () => {
       power: 15,
       type: "melee",
       image: Geralt,
+      imageName: "Geralt_of_Rivia.jpg",
     },
   ]);
   const [isEditing, setIsEditing] = useState(false);
@@ -20,7 +25,8 @@ const AdminPanel = () => {
     title: "",
     power: "",
     type: "melee",
-    image: "",
+    imageFile: null,
+    imageName: "",
   });
 
   const renderIcon = (type) => {
@@ -36,12 +42,49 @@ const AdminPanel = () => {
     }
   };
 
-  const handleAddCard = () => {
+  const handleAddCard = async () => {
     const id = Date.now();
     const card = { ...newCard, id };
     setCards([...cards, card]);
-    setNewCard({ id: null, title: "", power: "", type: "melee", image: "" });
+    setNewCard({
+      id: null,
+      title: "",
+      power: "",
+      type: "melee",
+      imageFile: null,
+      imageName: "",
+    });
     console.log("Card Created:", card);
+
+    //First Step Solution, id = null
+
+    // try {
+    //   // Add the new card data to Firestore without specifying an id
+    // const cardToAdd = { ...newCard };
+    // delete cardToAdd.imageFile;
+    //   const docRef = await addDoc(collection(db, "cards"), cardToAdd);
+
+    //   // Firebase automatically assigns an id; you can access it with docRef.id
+    //   console.log("Card added to Firestore with ID:", docRef.id);
+    // } catch (error) {
+    //   console.error("Error adding card to Firestore:", error);
+    // }
+
+    // ID in sync with firebase
+
+    // Generate a unique document reference with an ID
+    const docRef = doc(CARDS_COLLECTION); // creates a reference with a unique ID
+
+    // Use docRef.id as your card ID in your local newCard object
+    const newCardWithId = { ...newCard, id: docRef.id };
+    // Delete it, because Firebase can't handle this type for a document
+    delete newCardWithId.imageFile;
+    try {
+      // Use setDoc with the generated document reference
+      await setDoc(docRef, newCardWithId);
+    } catch (error) {
+      console.error("Error adding card to Firestore:", error);
+    }
   };
 
   const handleDeleteCard = (id) => {
@@ -52,7 +95,7 @@ const AdminPanel = () => {
 
   const handleEditCard = (card) => {
     setIsEditing(true);
-    setNewCard(card);
+    setNewCard({ ...card, imageFile: null }); // Clear imageFile for editing mode
   };
 
   const handleSaveEdit = () => {
@@ -61,14 +104,35 @@ const AdminPanel = () => {
     );
     setCards(updatedCards);
     setIsEditing(false);
-    setNewCard({ id: null, title: "", power: "", type: "melee", image: "" });
+    setNewCard({
+      id: null,
+      title: "",
+      power: "",
+      type: "melee",
+      imageFile: null,
+      imageName: "",
+    });
     console.log("Card Updated:", newCard);
   };
 
   const handleCancelEdit = () => {
     setIsEditing(false);
-    setNewCard({ id: null, title: "", power: "", type: "melee", image: "" });
+    setNewCard({
+      id: null,
+      title: "",
+      power: "",
+      type: "melee",
+      imageFile: null,
+      imageName: "",
+    });
     console.log("Edit Cancelled");
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setNewCard({ ...newCard, imageFile: file, imageName: file.name });
+    }
   };
 
   return (
@@ -124,12 +188,11 @@ const AdminPanel = () => {
           <option value="ranged">Ranged</option>
           <option value="siege">Siege</option>
         </select>
-        <input
-          type="text"
-          placeholder="Image URL"
-          value={newCard.image}
-          onChange={(e) => setNewCard({ ...newCard, image: e.target.value })}
-        />
+
+        {/* Image File Input */}
+        <input type="file" accept="image/*" onChange={handleImageChange} />
+        {newCard.imageName && <p>Selected Image: {newCard.imageName}</p>}
+
         <button onClick={isEditing ? handleSaveEdit : handleAddCard}>
           {isEditing ? (
             "Save Changes"
