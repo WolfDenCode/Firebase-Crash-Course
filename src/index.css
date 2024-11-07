@@ -1,0 +1,20 @@
+/* Body styling */
+body {
+  background-color: #1e1e1e;
+  color: #f8f8f8;
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+}
+
+.card-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  justify-content: center;
+  max-width: 1200px;
+  padding: 20px;
+}
