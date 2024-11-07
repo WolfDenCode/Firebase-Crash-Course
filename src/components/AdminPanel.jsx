@@ -1,25 +1,42 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FaTrash, FaEdit, FaPlus, FaTimes } from "react-icons/fa";
 import { GiArrowCluster, GiCatapult, GiAncientSword } from "react-icons/gi";
 import { db, storage } from "../config/firebase";
-import { collection, doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  setDoc,
+  deleteDoc,
+  query,
+  getDocs,
+} from "firebase/firestore";
 import { ref, getDownloadURL, uploadBytes } from "firebase/storage";
 import "./AdminPanel.css";
-import Geralt from "../assets/images/cards/Geralt_of_Rivia.jpg";
 
 const AdminPanel = () => {
   const CARDS_COLLECTION = collection(db, "cards");
 
-  const [cards, setCards] = useState([
-    {
-      id: 1,
-      title: "Geralt of Rivia",
-      power: 15,
-      type: "melee",
-      image: Geralt,
-      imageName: "Geralt_of_Rivia.jpg",
-    },
-  ]);
+  const [cards, setCards] = useState([]);
+
+  const fetchCards = async () => {
+    const cardsCol = collection(db, "cards");
+    const q = query(cardsCol);
+
+    try {
+      const cardsSnapshot = await getDocs(q);
+      const temp = cardsSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setCards(temp);
+    } catch (error) {
+      console.error("Error fetching cards:", error);
+    }
+  };
+  useEffect(() => {
+    fetchCards();
+  }, []);
   const [isEditing, setIsEditing] = useState(false);
   const [newCard, setNewCard] = useState({
     id: null,
@@ -171,36 +188,7 @@ const AdminPanel = () => {
   };
 
   return (
-    <div className="card-container">
-      {cards.map((card) => (
-        <div key={card.id} className="card">
-          <div
-            className="card-image"
-            style={{ backgroundImage: `url(${card.image})` }}
-          >
-            <div className="card-top-left">
-              <div className="power">{card.power}</div>
-              <div className="icon">{renderIcon(card.type)}</div>
-            </div>
-            <button
-              className="delete-icon"
-              onClick={() => handleDeleteCard(card.id)}
-            >
-              <FaTimes />
-            </button>
-            <div className="card-title">{card.title}</div>
-          </div>
-          <div className="card-actions">
-            <button
-              className="edit-button"
-              onClick={() => handleEditCard(card)}
-            >
-              <FaEdit />
-            </button>
-          </div>
-        </div>
-      ))}
-
+    <div className="admin-panel">
       <div className="add-card">
         <h3>{isEditing ? "Edit Card" : "Add New Card"}</h3>
         <input
@@ -242,6 +230,36 @@ const AdminPanel = () => {
             Cancel Edit
           </button>
         )}
+      </div>
+      <div className="card-container">
+        {cards.map((card) => (
+          <div key={card.id} className="card">
+            <div
+              className="card-image"
+              style={{ backgroundImage: `url(${card.image})` }}
+            >
+              <div className="card-top-left">
+                <div className="power">{card.power}</div>
+                <div className="icon">{renderIcon(card.type)}</div>
+              </div>
+              <button
+                className="delete-icon"
+                onClick={() => handleDeleteCard(card.id)}
+              >
+                <FaTimes />
+              </button>
+              <div className="card-title">{card.title}</div>
+            </div>
+            <div className="card-actions">
+              <button
+                className="edit-button"
+                onClick={() => handleEditCard(card)}
+              >
+                <FaEdit />
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

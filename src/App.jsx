@@ -1,62 +1,46 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Card from "./components/Card";
 import "./App.css";
-import Geralt_of_Rivia from "./assets/images/cards/Geralt_of_Rivia.jpg";
-import Cirilla from "./assets/images/cards/Ciri.jpg";
-import Yennefer from "./assets/images/cards/Yennefer.jpg";
-import Gaunter from "./assets/images/cards/Gaunter.jpg";
-import Aguara from "./assets/images/cards/Aguara.jpg";
-import Geralt_Aard from "./assets/images/cards/Geralt_Aard.jpg";
-import Dandelion from "./assets/images/cards/Dandelion.jpg";
+import { db } from "./config/firebase";
 import AdminPanel from "./components/AdminPanel";
+import { getDocs, collection, query } from "firebase/firestore";
+
 function App() {
+  const [cards, setCards] = useState([]);
+
+  const fetchCards = async () => {
+    const cardsCol = collection(db, "cards");
+    const q = query(cardsCol);
+
+    try {
+      const cardsSnapshot = await getDocs(q);
+      const temp = cardsSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setCards(temp);
+    } catch (error) {
+      console.error("Error fetching cards:", error);
+    }
+  };
+  useEffect(() => {
+    fetchCards();
+  }, []);
+
   return (
     <>
       <div className="card-container">
-        <Card
-          title="Geralt of Rivia"
-          power={15}
-          image={Geralt_of_Rivia} // Replace with actual image path
-          type="melee"
-        />
-        <Card
-          title="Cirilla"
-          power={15}
-          image={Cirilla} // Replace with actual image path
-          type="melee"
-        />
-        <Card
-          title="Yennefer of Vengerberg"
-          power={7}
-          image={Yennefer} // Replace with actual image path
-          type="ranged"
-        />
-        <Card
-          title="Dandelion"
-          power={2}
-          image={Dandelion} // Replace with actual image path
-          type="ranged"
-        />
-        <Card
-          title="Aguara"
-          power={6}
-          image={Aguara} // Replace with actual image path
-          type="siege"
-        />
-        <Card
-          title="Geralt Aard"
-          power={5}
-          image={Geralt_Aard} // Replace with actual image path
-          type="ranged"
-        />
-        <Card
-          title="Gaunter O'Dimm"
-          power={8}
-          image={Gaunter} // Replace with actual image path
-          type="siege"
-        />
+        {cards.map((card) => (
+          <Card
+            key={card.id}
+            title={card.title}
+            power={card.power}
+            image={card.image}
+            type={card.type}
+          />
+        ))}
       </div>
-      <AdminPanel></AdminPanel>
+      <AdminPanel />
     </>
   );
 }
