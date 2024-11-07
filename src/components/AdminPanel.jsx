@@ -66,6 +66,10 @@ const AdminPanel = () => {
     }
   };
 
+  useEffect(() => {
+    console.log("New card state updated:", newCard);
+  }, [newCard]);
+
   const handleAddCard = async () => {
     // const id = Date.now();
     // const card = { ...newCard, id };
@@ -154,14 +158,31 @@ const AdminPanel = () => {
   };
 
   const handleSaveEdit = async () => {
-    // Create a new object without `imageFile` to avoid uploading a file object to Firestore
-    const { imageFile, ...cardDataToUpload } = newCard;
+    const cardDataToUpload = newCard;
 
     try {
       // Update Firestore
       const cardDocRef = doc(CARDS_COLLECTION, newCard.id);
+
+      const editedDocData = (await getDoc(cardDocRef)).data();
+      console.log("New Card ", newCard);
+      if (
+        newCard.imageFile &&
+        newCard.imageFile.name != editedDocData.imageName
+      ) {
+        cardDataToUpload.imageName = newCard.imageFile.name;
+        console.log("Entered If Statement");
+        const imageRef = ref(
+          storage,
+          `cards/${cardDataToUpload.id}/${cardDataToUpload.imageName}`
+        );
+        await uploadBytes(imageRef, newCard.imageFile);
+        cardDataToUpload.image = await getDownloadURL(imageRef);
+      }
+      //If there was an image, it already got uploaded, we want to get rid of the file before uploading
+      delete cardDataToUpload.imageFile;
+
       await setDoc(cardDocRef, cardDataToUpload, { merge: true });
-      console.log("Card Updated in Firestore:", newCard);
 
       // Update local state
       const updatedCards = cards.map((card) =>
