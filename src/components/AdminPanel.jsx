@@ -11,7 +11,13 @@ import {
   query,
   getDocs,
 } from "firebase/firestore";
-import { ref, getDownloadURL, uploadBytes } from "firebase/storage";
+import {
+  ref,
+  getDownloadURL,
+  uploadBytes,
+  deleteObject,
+  listAll,
+} from "firebase/storage";
 import "./AdminPanel.css";
 
 const AdminPanel = () => {
@@ -119,15 +125,26 @@ const AdminPanel = () => {
 
   const handleDeleteCard = async (id) => {
     try {
-      // Delete from Firestore
+      // 1. Delete Firestore Document
       await deleteDoc(doc(CARDS_COLLECTION, id));
       console.log("Card Deleted from Firestore:", id);
+
+      // 2. Delete Associated Folder in Firebase Storage
+      const folderRef = ref(storage, `cards/${id}`);
+
+      // List all items in the folder and delete each one
+      const folderContents = await listAll(folderRef);
+      const deletePromises = folderContents.items.map((itemRef) =>
+        deleteObject(itemRef)
+      );
+      await Promise.all(deletePromises);
+      console.log("Folder deleted from Firebase Storage:", `cards/${id}`);
 
       // Update local state
       const updatedCards = cards.filter((card) => card.id !== id);
       setCards(updatedCards);
     } catch (error) {
-      console.error("Error deleting card from Firestore:", error);
+      console.error("Error deleting card:", error);
     }
   };
 
