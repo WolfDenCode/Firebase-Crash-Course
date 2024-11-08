@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { FaTrash, FaEdit, FaPlus, FaTimes } from "react-icons/fa";
+import React, { useEffect, useState, useRef } from "react";
+import { FaTrash, FaEdit, FaPlus } from "react-icons/fa";
 import { GiArrowCluster, GiCatapult, GiAncientSword } from "react-icons/gi";
 import { db, storage } from "../config/firebase";
 import {
@@ -43,6 +43,7 @@ const AdminPanel = () => {
   useEffect(() => {
     fetchCards();
   }, []);
+
   const [isEditing, setIsEditing] = useState(false);
   const [newCard, setNewCard] = useState({
     id: null,
@@ -66,9 +67,7 @@ const AdminPanel = () => {
     }
   };
 
-  useEffect(() => {
-    console.log("New card state updated:", newCard);
-  }, [newCard]);
+  const [fileInputKey, setFileInputKey] = useState(0);
 
   const handleAddCard = async () => {
     // const id = Date.now();
@@ -121,6 +120,7 @@ const AdminPanel = () => {
         imageFile: null,
         imageName: "",
       });
+      setFileInputKey(fileInputKey + 1);
       console.log("Card Created:", newCardWithId);
     } catch (error) {
       console.error("Error adding card to Firestore:", error);
@@ -155,6 +155,7 @@ const AdminPanel = () => {
   const handleEditCard = (card) => {
     setIsEditing(true);
     setNewCard({ ...card, imageFile: null }); // Clear imageFile for editing mode
+    setFileInputKey(fileInputKey + 1);
   };
 
   const handleSaveEdit = async () => {
@@ -200,6 +201,7 @@ const AdminPanel = () => {
         imageFile: null,
         imageName: "",
       });
+      setFileInputKey(fileInputKey + 1);
     } catch (error) {
       console.error("Error updating card in Firestore:", error);
     }
@@ -215,6 +217,7 @@ const AdminPanel = () => {
       imageFile: null,
       imageName: "",
     });
+    setFileInputKey(fileInputKey + 1);
     console.log("Edit Cancelled");
   };
 
@@ -251,7 +254,12 @@ const AdminPanel = () => {
         </select>
 
         {/* Image File Input */}
-        <input type="file" accept="image/*" onChange={handleImageChange} />
+        <input
+          type="file"
+          accept="image/*"
+          key={fileInputKey}
+          onChange={handleImageChange}
+        />
         {newCard.imageName && <p>Selected Image: {newCard.imageName}</p>}
 
         <button onClick={isEditing ? handleSaveEdit : handleAddCard}>
@@ -284,7 +292,7 @@ const AdminPanel = () => {
                 className="delete-icon"
                 onClick={() => handleDeleteCard(card.id)}
               >
-                <FaTimes />
+                <FaTrash />
               </button>
               <div className="card-title">{card.title}</div>
             </div>
