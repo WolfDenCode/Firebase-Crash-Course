@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { FaTrash, FaEdit, FaPlus } from "react-icons/fa";
 import { GiArrowCluster, GiCatapult, GiAncientSword } from "react-icons/gi";
-import { db, storage } from "../config/firebase";
+import { auth, db, storage } from "../config/firebase";
 import {
   collection,
   doc,
@@ -19,12 +19,15 @@ import {
   listAll,
 } from "firebase/storage";
 import "./AdminPanel.css";
+import { useNavigate } from "react-router-dom";
+import { signOut } from "firebase/auth";
 
 const AdminPanel = () => {
   const CARDS_COLLECTION = collection(db, "cards");
 
+  const navigate = useNavigate();
   const [cards, setCards] = useState([]);
-
+  const [fileInputKey, setFileInputKey] = useState(0);
   const fetchCards = async () => {
     const cardsCol = collection(db, "cards");
     const q = query(cardsCol);
@@ -67,7 +70,14 @@ const AdminPanel = () => {
     }
   };
 
-  const [fileInputKey, setFileInputKey] = useState(0);
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate("/login");
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
+  };
 
   const handleAddCard = async () => {
     // const id = Date.now();
@@ -230,6 +240,9 @@ const AdminPanel = () => {
 
   return (
     <div className="admin-panel">
+      <button onClick={handleLogout} className="logout-button">
+        Logout
+      </button>
       <div className="add-card">
         <h3>{isEditing ? "Edit Card" : "Add New Card"}</h3>
         <input

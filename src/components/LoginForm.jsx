@@ -1,26 +1,51 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./LoginForm.css";
+import { auth } from "../config/firebase";
+import { onAuthStateChanged, signInWithEmailAndPassword } from "firebase/auth";
+import { redirect, useNavigate } from "react-router-dom";
 
 const LoginForm = ({ onLogin }) => {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState(null);
+  let navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        navigate("/admin");
+      }
+    });
+    return () => unsubscribe();
+  }, [navigate]);
+
+  const handleLogin = async (e) => {
     e.preventDefault();
-    onLogin(username, password);
+    setError(null); // Reset error state before attempting login
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+
+      console.log("Login successful");
+      return navigate("/admin");
+    } catch (error) {
+      setError("Failed to log in. Please check your credentials.");
+      console.error("Login error:", error);
+    }
   };
 
   return (
     <div className="login-form-container">
-      <form className="login-form" onSubmit={handleSubmit}>
+      <form className="login-form" onSubmit={handleLogin}>
         <h2>Login</h2>
+        {error && <p className="error-message">{error}</p>}
         <div className="form-group">
           <label htmlFor="username">Username</label>
           <input
-            type="text"
+            type="email"
             id="username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             required
           />
         </div>
