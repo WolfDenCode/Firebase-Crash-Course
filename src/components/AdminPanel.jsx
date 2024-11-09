@@ -80,24 +80,6 @@ const AdminPanel = () => {
   };
 
   const handleAddCard = async () => {
-    // const id = Date.now();
-    // const card = { ...newCard, id };
-    // setCards([...cards, card]);
-
-    //First Step Solution, id = null
-
-    // try {
-    //   // Add the new card data to Firestore without specifying an id
-    // const cardToAdd = { ...newCard };
-    // delete cardToAdd.imageFile;
-    //   const docRef = await addDoc(collection(db, "cards"), cardToAdd);
-
-    //   // Firebase automatically assigns an id; you can access it with docRef.id
-    //   console.log("Card added to Firestore with ID:", docRef.id);
-    // } catch (error) {
-    //   console.error("Error adding card to Firestore:", error);
-    // }
-
     // ID in sync with firebase
 
     // Generate a unique document reference with an ID

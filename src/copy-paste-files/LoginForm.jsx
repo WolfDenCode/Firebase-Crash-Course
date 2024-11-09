@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./LoginForm.css";
 
-const LoginForm = ({ onLogin }) => {
+const LoginForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);

@@ -7,9 +7,6 @@ import LoginForm from "./components/LoginForm.jsx";
 import AdminPanel from "./components/AdminPanel.jsx";
 import AuthRoute from "./components/AuthRoute.jsx";
 
-const handleLogin = (username, password) => {
-  console.log("Logging in with:", username, password);
-};
 const router = createBrowserRouter([
   {
     path: "/",
@@ -25,7 +22,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/login",
-    element: <LoginForm onLogin={handleLogin}></LoginForm>,
+    element: <LoginForm></LoginForm>,
   },
 ]);
 createRoot(document.getElementById("root")).render(

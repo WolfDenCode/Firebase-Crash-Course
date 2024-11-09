@@ -31,9 +31,7 @@ const AdminPanel = () => {
 
   return (
     <div className="admin-panel">
-      <button onClick={handleLogout} className="logout-button">
-        Logout
-      </button>
+      <button className="logout-button">Logout</button>
       <div className="add-card">
         <h3>{isEditing ? "Edit Card" : "Add New Card"}</h3>
         <input type="text" placeholder="Title" />
